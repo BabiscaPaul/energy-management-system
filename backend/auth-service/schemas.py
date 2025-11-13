@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from models import RoleEnum
+from shared.types import RoleEnum
 
 class UserRegister(BaseModel):
     username: str

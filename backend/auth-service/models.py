@@ -1,10 +1,6 @@
 from sqlalchemy import Column, Integer, String, Enum
 from database import Base
-import enum
-
-class RoleEnum(str, enum.Enum):
-    ADMIN = "admin"
-    CLIENT = "client"
+from shared.types import RoleEnum
 
 class User(Base):
     __tablename__ = "users"
@@ -12,4 +8,4 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    role = Column(Enum(RoleEnum), nullable=False)  # "admin" or "client"
+    role = Column(Enum(RoleEnum), nullable=False)
