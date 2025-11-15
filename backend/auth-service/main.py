@@ -31,9 +31,17 @@ def register(user: schemas.UserRegister, db: Session = Depends(get_db)):
     db.refresh(new_user)
     
     access_token = auth.create_access_token(
-        data={"sub": user.username, "role": user.role.value}
+        data={
+            "sub": user.username,
+            "role": user.role.value,
+            "user_id": new_user.id,       
+        }
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": new_user.id,
+    }
 
 @app.post("/login", response_model=schemas.Token)
 def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
@@ -45,9 +53,17 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     access_token = auth.create_access_token(
-        data={"sub": db_user.username, "role": db_user.role.value}
+        data={
+            "sub": db_user.username, 
+            "role": db_user.role.value,
+            "user_id": db_user.id,     
+        }
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": db_user.id,
+    }
 
 @app.get("/health")
 def health():

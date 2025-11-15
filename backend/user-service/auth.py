@@ -29,7 +29,8 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
     
     return {
         "username": payload.get("sub"),
-        "role": payload.get("role")
+        "role": payload.get("role"),
+        "user_id": payload.get("user_id")
     }
 
 

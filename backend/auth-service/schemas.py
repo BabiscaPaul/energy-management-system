@@ -4,7 +4,7 @@ from shared.types import RoleEnum
 class UserRegister(BaseModel):
     username: str
     password: str
-    role: RoleEnum = RoleEnum.CLIENT # defaults to client
+    role: RoleEnum = RoleEnum.CLIENT
 
 class UserLogin(BaseModel):
     username: str
@@ -13,3 +13,4 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str 
     token_type: str
+    user_id: int | None = None 
