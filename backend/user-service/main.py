@@ -6,10 +6,10 @@ sys.path.append(str(Path(__file__).parent.parent))
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import models
-import auth
-from database import engine, get_db
+from shared.database import engine, get_db
 
 from shared.types import RoleEnum
+import shared.utils as utils 
 
 import schemas
 
@@ -29,7 +29,7 @@ def health():
 
 @app.get("/users")
 def get_all_users(
-    current_user: dict = Depends(auth.require_admin),
+    current_user: dict = Depends(utils.require_admin),
     db: Session = Depends(get_db)
 ):
     users = db.query(models.User).all()
@@ -38,7 +38,7 @@ def get_all_users(
 @app.get("/users/{id}")
 def get_user(
     id: int,
-    current_user: dict = Depends(auth.get_current_user),
+    current_user: dict = Depends(utils.get_current_user),
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.id == id).first()
@@ -57,7 +57,7 @@ def get_user(
 @app.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_in: schemas.UserCreate, 
-    current_user: dict = Depends(auth.require_admin),
+    current_user: dict = Depends(utils.require_admin),
     db: Session = Depends(get_db)
 ):
     does_exist = db.query(models.User).filter(models.User.id == user_in.id).first()
@@ -83,7 +83,7 @@ def create_user(
 def update_user(
     id: int, 
     user_in: schemas.UserUpdate,
-    current_user: dict = Depends(auth.get_current_user),
+    current_user: dict = Depends(utils.get_current_user),
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.id == id).first()
@@ -119,7 +119,7 @@ def update_user(
 @app.delete("/users/{id}", status_code=status.HTTP_200_OK)
 def delete_user(
     id: int, 
-    current_user: dict = Depends(auth.get_current_user),
+    current_user: dict = Depends(utils.get_current_user),
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.id == id).first()
