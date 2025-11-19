@@ -68,6 +68,9 @@ coverage/
 *.sqlite
 *.sqlite3
 
+# Docker
+docker-compose.yml
+
 # Misc
 .cache/
 .mypy_cache/
