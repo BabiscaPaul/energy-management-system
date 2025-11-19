@@ -21,6 +21,9 @@ wheels/
 *.egg
 MANIFEST
 
+# Docker
+docker-compose.yml
+
 # Virtual Environments
 .venv/
 venv/
