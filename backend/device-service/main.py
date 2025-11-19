@@ -9,7 +9,7 @@ import models
 from shared.database import engine, get_db
 
 from shared.types import RoleEnum
-import shared.utils as utils
+from shared.internal_auth import get_user_from_headers
 
 import schemas
 
@@ -31,7 +31,7 @@ def health():
 @app.post("/devices", response_model=schemas.DeviceResponse, status_code=status.HTTP_201_CREATED)
 def create_device(
     device_in: schemas.DeviceCreate,
-    current_user: dict = Depends(utils.require_admin),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     existing_device = db.query(models.Device).filter(models.Device.name == device_in.name).first()
@@ -51,7 +51,7 @@ def create_device(
 
 @app.get("/devices")
 def get_all_devices(
-    current_user: dict = Depends(utils.require_admin),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     devices = db.query(models.Device).all()
@@ -60,7 +60,7 @@ def get_all_devices(
 @app.get("/devices/{id}", response_model=schemas.DeviceResponse)
 def get_device(
     id: int,
-    current_user: dict = Depends(utils.get_current_user),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     device = db.query(models.Device).filter(models.Device.id == id).first()
@@ -68,17 +68,14 @@ def get_device(
     if device is None:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    # Allow admin or the device owner to view
-    if current_user["role"] != RoleEnum.ADMIN.value and current_user["user_id"] != device.user_id:
-        raise HTTPException(status_code=403, detail="Access denied. You can only view your own devices.")
-
+    # Gateway already validated permissions
     return device
 
 @app.put("/devices/{id}", response_model=schemas.DeviceResponse, status_code=status.HTTP_200_OK)
 def update_device(
     id: int,
     device_in: schemas.DeviceUpdate,
-    current_user: dict = Depends(utils.require_admin),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     device = db.query(models.Device).filter(models.Device.id == id).first()
@@ -107,7 +104,7 @@ def update_device(
 @app.delete("/devices/{id}", status_code=status.HTTP_200_OK)
 def delete_device(
     id: int,
-    current_user: dict = Depends(utils.require_admin),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     """Delete device (Admin only)"""
@@ -123,11 +120,9 @@ def delete_device(
 @app.get("/devices/user/{user_id}")
 def get_devices_for_user(
     user_id: int,
-    current_user: dict = Depends(utils.get_current_user),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
-    if current_user["role"] != RoleEnum.ADMIN.value and current_user["user_id"] != user_id:
-        raise HTTPException(status_code=403, detail="Access denied. You can only view your own devices.")
-
+    # Gateway already validated permissions
     devices = db.query(models.Device).filter(models.Device.user_id == user_id).all()
     return devices

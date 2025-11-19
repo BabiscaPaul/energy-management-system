@@ -9,7 +9,7 @@ import models
 from shared.database import engine, get_db
 
 from shared.types import RoleEnum
-import shared.utils as utils 
+from shared.internal_auth import get_user_from_headers
 
 import schemas
 
@@ -29,16 +29,17 @@ def health():
 
 @app.get("/users")
 def get_all_users(
-    current_user: dict = Depends(utils.require_admin),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
+    # Gateway already validated admin role
     users = db.query(models.User).all()
     return users
 
 @app.get("/users/{id}")
 def get_user(
     id: int,
-    current_user: dict = Depends(utils.get_current_user),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.id == id).first()
@@ -46,18 +47,13 @@ def get_user(
     if user is None: 
         raise HTTPException(status_code=404, detail="User not found")
     
-    if current_user["role"] != RoleEnum.ADMIN.value:
-        raise HTTPException(
-            status_code=403, 
-            detail="Access denied. Clients can only view their own profile."
-        )
-    
+    # Gateway already validated permissions
     return user
 
 @app.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_in: schemas.UserCreate, 
-    current_user: dict = Depends(utils.require_admin),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     does_exist = db.query(models.User).filter(models.User.id == user_in.id).first()
@@ -83,17 +79,13 @@ def create_user(
 def update_user(
     id: int, 
     user_in: schemas.UserUpdate,
-    current_user: dict = Depends(utils.get_current_user),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.id == id).first()
     if user is None: raise HTTPException(status_code=404, detail='User not found')
     
-    if current_user["role"] != RoleEnum.ADMIN.value and current_user["sub"] != id:
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied. Clients can only update their own profile."
-        )
+    # Gateway already validated permissions
     
     if user_in.email and user_in.email != user.email:
         is_email_taken = db.query(models.User).filter(
@@ -119,18 +111,14 @@ def update_user(
 @app.delete("/users/{id}", status_code=status.HTTP_200_OK)
 def delete_user(
     id: int, 
-    current_user: dict = Depends(utils.get_current_user),
+    current_user: dict = Depends(get_user_from_headers),
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.id == id).first()
     if user is None:
         raise HTTPException(status_code=404, detail='User not found')
     
-    if current_user["role"] != RoleEnum.ADMIN.value and current_user["user_id"] != id:
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied. Clients can only delete their own profile."
-        )
+    # Gateway already validated permissions
     
     db.delete(user)
     db.commit()
